@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi primera tienda</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <figure>
+                <img
+                    style="width: 50px; height: 50px;"
+                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlT9XOULdyAU-kyQFMwdc1lflTxAcUZ5JG-C_WFKOdcJnniE4I2VD6fxU&s=10"
+                    alt="Logo de la tienda">
+            </figure>
+            <ul class="lista_navegacion">
+                <li class="elemento_lista">Inicio</li>
+                <li class="elemento_lista">Productos</li>
+                <li class="elemento_lista">Contacto</li>
+            </ul>
+        </nav>
+    </header>
+    <div class="main_container">
+        <aside>
+            <h2>Categorías</h2>
+            <p class="categoria">Accesorios tecnológicos</p>
+            <p class="categoria">Computadoras</p>
+            <p class="categoria">Electrónica</p>
+        </aside>
+        <main>
+            <h1>Bienvenido a mi tienda</h1>
+            <p>Los mejores productos tecnológicos</p>
+            <div class="nuevo_producto_container">
+                <button id="nuevo_producto" onclick="abrirModal()">Nuevo producto</button>
+                <dialog id="nuevo_producto_modal">
+                    <h2>Registrar nuevo producto</h2>
+                    <form id="form_nuevo_producto" onsubmit="crearProducto(event)">
+                        <div class="modal_cuerpo">
+                            <div class="form-input">
+                                <label for="nombre">Nombre del producto</label>
+                                <input type="text" id="nombre" required>
+                            </div>
+                            <div class="form-input">
+                                <label for="descripcion">Descripción</label>
+                                <textarea id="descripcion" required></textarea>
+                            </div>
+                            <div class="form-input">
+                                <label for="imagen">URL de la imagen</label>
+                                <input type="url" id="imagen" placeholder="https://images.unsplash.com/...">
+                            </div>
+                            <div class="form-input div_precio_stock">
+                                <div>
+                                    <label for="precio">Precio</label>
+                                    <input type="number" id="precio" min="0" step="0.01" required>
+                                </div>
+                                <div>
+                                    <label for="stock">Stock</label>
+                                    <input type="number" id="stock" min="0" step="1" required>
+                                </div>
+                            </div>
+                        </div>                        
+                        <div class="modal_botones">
+                            <button type="button" id="cancelar_producto" onclick="cerrarModal()">Cancelar</button>
+                            <button type="submit">Guardar producto</button>
+                        </div>
+                    </form>
+                </dialog>
+            </div>
+            <div class="div_buscar_producto">
+                <input type="number"
+                    id="buscar_producto"
+                    placeholder="Ingrese el ID del producto"
+                    min="1">
+                <button id="btn_buscar_producto" onclick="buscarProducto()">Buscar</button>
+                <button id="btn_mostrar_todos" onclick="cargarProductos()">Mostrar todos</button>
+            </div>
+            <div id="productos">
+                <h2>Catálogo de productos</h2>
+                <div id="div_productos"></div>
+            </div>
+        </main>
+    </div>
+
+    <footer id="contacto">
+    </footer>
+</body>
+<script>
+    const URL_Store = "http://localhost:8000/productos";
+    const contenedor = document.getElementById("div_productos");
+    cargarProductos();
+    //Modal
+    const btn_nuevo_producto = document.getElementById("nuevo_producto");
+    const btn_cancelar = document.getElementById("cancelar_producto");
+    function abrirModal() {
+        document.getElementById("nuevo_producto_modal").showModal();
+    }
+
+    function cerrarModal() {
+        document.getElementById("nuevo_producto_modal").close();
+    }
+    
+    function cargarProductos() {
+        fetch(URL_Store)
+        .then(response => response.json())
+        .then(productos => {
+            mostrarProductos(productos);
+        });
+    }
+    //Ver productos
+    function mostrarProductos(productos) {
+        const contenedor = document.getElementById("div_productos");
+        contenedor.replaceChildren();
+        productos.forEach((producto) => {
+            const contenedor = document.getElementById("div_productos");
+            const div_producto = document.createElement("div");
+            const img_producto = document.createElement("img");
+            const div_data_producto = document.createElement("div");
+            const nombre_producto = document.createElement("span");
+            const precio_producto = document.createElement("span");
+            const div_descripcion_producto = document.createElement("div");
+            const descripcion_producto = document.createElement("p");
+            const div_botones = document.createElement("div");
+            const btn_eliminar = document.createElement("button");
+            img_producto.src = producto.imagen;
+            img_producto.alt = producto.nombre;
+            img_producto.className = "img_producto";
+            nombre_producto.textContent = producto.nombre;  
+            precio_producto.textContent = "$" + producto.precio.toFixed(2);
+            descripcion_producto.textContent = producto.descripcion;
+            descripcion_producto.className = "descripcion_producto";
+            div_producto.className = "div_producto";
+            div_data_producto.className = "div_data_producto";
+            div_descripcion_producto.className = "div_descripcion_producto";
+            div_botones.className = "div_botones";
+            btn_eliminar.textContent = "Eliminar";
+            btn_eliminar.className = "btn_eliminar";
+            btn_eliminar.addEventListener("click", () => {
+                eliminarProducto(producto.id);
+            });
+            contenedor.appendChild(div_producto);
+            div_producto.appendChild(img_producto);
+            div_producto.appendChild(div_data_producto);
+            div_producto.appendChild(div_descripcion_producto);
+            div_data_producto.appendChild(nombre_producto);
+            div_data_producto.appendChild(precio_producto);                
+            div_descripcion_producto.appendChild(descripcion_producto);
+            div_descripcion_producto.appendChild(div_botones);
+            div_botones.appendChild(btn_eliminar);
+        });        
+    }
+    function eliminarProducto(id) {
+        if (confirm("¿Desea eliminar este producto?")) {
+            fetch(URL_Store + "/" + id, {
+                method: "DELETE"
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("No se pudo eliminar");
+                }
+                cargarProductos();
+            })
+            .catch(error => console.error(error));
+        }
+    }
+    
+    function crearProducto(event) {
+
+        event.preventDefault();
+
+        const nombre = document.getElementById("nombre").value;
+        const descripcion = document.getElementById("descripcion").value;
+        const precio = Number(document.getElementById("precio").value);
+        const stock = Number(document.getElementById("stock").value);
+        const imagen = document.getElementById("imagen").value;
+
+        if (nombre.trim() === "" || 
+            !Number.isFinite(precio) || precio < 0 ||
+            !Number.isInteger(stock) || stock < 0 ||
+            document.getElementById("precio").value === "" ||
+            document.getElementById("stock").value === "") {
+            alert("Ingrese datos válidos");
+            return;
+        }
+
+        const producto = {
+            nombre: nombre,
+            descripcion: descripcion,
+            precio: precio,
+            stock: stock,
+            imagen: imagen || null
+        };
+
+        fetch(URL_Store, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(producto)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Error al guardar el producto");
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert("Producto registrado correctamente");
+            document.getElementById("nuevo_producto_modal").close();
+            document.getElementById("form_nuevo_producto").reset();
+            cargarProductos();
+        })
+        .catch(error => {
+            alert(error.message);
+        });
+    }
+
+    function buscarProducto() {
+        const id = document.getElementById("buscar_producto").value;
+
+        if (id === "") {
+            alert("Ingrese un ID");
+            return;
+        }
+        
+        fetch(URL_Store + "/" + id)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Producto no encontrado");
+                }
+                return response.json();
+            })
+            .then(producto => {
+                mostrarProductos([producto]);
+            })
+            .catch(error => {
+                alert(error.message);
+            });
+    }
+</script>
+</html>
